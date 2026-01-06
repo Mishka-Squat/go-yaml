@@ -13,6 +13,20 @@ import (
 	"errors"
 )
 
+// CommentContext provides comment data to comment processors.
+type CommentContext struct {
+	HeadComment []byte
+	LineComment []byte
+	FootComment []byte
+	TailComment []byte
+	StemComment []byte
+}
+
+// CommentProcessor is a callback for processing comments on nodes.
+// It receives the node and comment context, and should populate the node's
+// HeadComment, LineComment, and FootComment fields as appropriate.
+type CommentProcessor func(node *Node, ctx *CommentContext) error
+
 // Options holds configuration for both loading and dumping YAML.
 type Options struct {
 	// Loading options
@@ -31,6 +45,11 @@ type Options struct {
 	ExplicitStart         bool      // Always emit ---
 	ExplicitEnd           bool      // Always emit ...
 	FlowSimpleCollections bool      // Use flow style for simple collections
+
+	// Plugin callbacks
+	CommentProcessor CommentProcessor // Callback for processing comments
+	LegacyComments   bool             // Enable V3-style comment handling
+	SkipComments     bool             // Skip comment scanning for performance
 }
 
 // Option allows configuring YAML loading and dumping operations.
@@ -327,8 +346,9 @@ func ApplyOptions(opts ...Option) (*Options, error) {
 // LegacyOptions holds the default options for legacy APIs like
 // Marshal/Unmarshal.
 var LegacyOptions = &Options{
-	Indent:     4,
-	LineWidth:  -1,
-	Unicode:    true,
-	UniqueKeys: true,
+	Indent:         4,
+	LineWidth:      -1,
+	Unicode:        true,
+	UniqueKeys:     true,
+	LegacyComments: true, // Enable V3 comment behavior for backward compatibility
 }
