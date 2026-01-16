@@ -115,6 +115,9 @@ var (
 	// WithFlowSimpleCollections controls flow style for simple collections.
 	// See internal/libyaml.WithFlowSimpleCollections.
 	WithFlowSimpleCollections = libyaml.WithFlowSimpleCollections
+	// WithLegacyComments enables V3-style comment handling.
+	// See internal/libyaml.WithLegacyComments.
+	WithLegacyComments = libyaml.WithLegacyComments
 )
 
 // Plugin options

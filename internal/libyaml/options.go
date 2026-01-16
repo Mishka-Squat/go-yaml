@@ -307,6 +307,32 @@ func WithFlowSimpleCollections(flow ...bool) Option {
 	}
 }
 
+// WithLegacyComments enables V3-style comment handling for backward compatibility.
+//
+// When enabled, comments are populated in Node.HeadComment, Node.LineComment,
+// and Node.FootComment fields during loading. This provides compatibility with
+// go-yaml v3 behavior.
+//
+// When called without arguments, defaults to true.
+//
+// The default is false (comments are not loaded unless using a comment plugin).
+// For new code, consider using comment plugins via WithPlugin() instead.
+func WithLegacyComments(enable ...bool) Option {
+	if len(enable) > 1 {
+		return func(o *Options) error {
+			return errors.New("yaml: WithLegacyComments accepts at most one argument")
+		}
+	}
+	val := len(enable) == 0 || enable[0]
+	return func(o *Options) error {
+		o.LegacyComments = val
+		if val {
+			o.SkipComments = false
+		}
+		return nil
+	}
+}
+
 // CombineOptions combines multiple options into a single Option.
 // This is useful for creating option presets or combining version defaults
 // with custom options.
@@ -345,10 +371,15 @@ func ApplyOptions(opts ...Option) (*Options, error) {
 
 // LegacyOptions holds the default options for legacy APIs like
 // Marshal/Unmarshal.
+//
+// Users can modify this to change defaults for Unmarshal/Marshal:
+//
+//	yaml.LegacyOptions.LegacyComments = true  // Enable comments in Unmarshal
+//	yaml.Unmarshal(data, &node)  // Now includes comments
 var LegacyOptions = &Options{
 	Indent:         4,
 	LineWidth:      -1,
 	Unicode:        true,
 	UniqueKeys:     true,
-	LegacyComments: true, // Enable V3 comment behavior for backward compatibility
+	LegacyComments: false, // Node comments are opt-in in v4
 }
