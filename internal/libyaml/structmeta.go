@@ -145,18 +145,23 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 		}
 
 		inline := false
+		inlineExcludeFields := map[string]struct{}{}
 		fields := strings.Split(tag, ",")
 		if len(fields) > 1 {
 			for _, flag := range fields[1:] {
-				switch flag {
-				case "omitempty":
-					info.OmitEmpty = true
-				case "flow":
-					info.Flow = true
-				case "inline":
-					inline = true
-				default:
-					return nil, fmt.Errorf("unsupported flag %q in tag %q of type %s", flag, tag, st)
+				if inline && strings.HasPrefix(flag, "-") {
+					inlineExcludeFields[flag[1:]] = struct{}{}
+				} else {
+					switch flag {
+					case "omitempty":
+						info.OmitEmpty = true
+					case "flow":
+						info.Flow = true
+					case "inline":
+						inline = true
+					default:
+						return nil, fmt.Errorf("unsupported flag %q in tag %q of type %s", flag, tag, st)
+					}
 				}
 			}
 			tag = fields[0]
@@ -192,6 +197,9 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 						inlineConstructors = append(inlineConstructors, append([]int{i}, index...))
 					}
 					for _, finfo := range sinfo.FieldsList {
+						if _, exclude := inlineExcludeFields[finfo.Key]; exclude {
+							continue
+						}
 						if _, found := fieldsMap[finfo.Key]; found {
 							msg := "duplicated key '" + finfo.Key + "' in struct " + st.String()
 							return nil, errors.New(msg)
